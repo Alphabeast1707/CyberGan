@@ -1,0 +1,47 @@
+# CyberGAN — .dockerignore
+# Excludes files from the Docker build context
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Development / test files
+.env
+.env.*
+!.env.example
+*.log
+simulate_threats.py
+attack_tester.py
+
+# Checkpoints (mounted as a volume in production)
+# Comment this out if you want to bake a pre-trained model INTO the image
+# config/checkpoints/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Test / docs
+tests/
+*.md
+!README.md
+
+# Temporary files
+tmp/
+scratch/
