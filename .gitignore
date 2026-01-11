@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment / secrets — NEVER commit these
+.env
+*.env
+!.env.example
+
+# Trained model weights (large files — mount as volumes in prod)
+# Uncomment the next two lines if you want to exclude checkpoints from git
+# checkpoints/*.pt
+# config/checkpoints/*.pt
+
+# Keep the checkpoint directory but ignore large .pt files
+checkpoints/*.pt
+config/checkpoints/*.pt
+
+# Keep training metadata and logs
+!config/checkpoints/.gitkeep
+!config/logs/.gitkeep
+
+# Logs
+logs/
+*.log
+config/logs/*.json
+
+# macOS
+.DS_Store
+**/.DS_Store
+._*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Test artifacts
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Docker
+# (docker-compose.yml and Dockerfile are committed)
+
+# Temp / scratch
+tmp/
+scratch/
