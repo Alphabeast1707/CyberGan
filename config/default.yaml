@@ -1,0 +1,374 @@
+# CyberGAN — Default Configuration
+# AI-Powered Server Security Agent
+
+# ─────────────────────────────────────────────
+# Agent Core Settings
+# ─────────────────────────────────────────────
+agent:
+  mode: "hybrid"                    # advisory | autonomous | hybrid
+  name: "CyberGAN-Agent"
+  log_level: "INFO"
+  data_dir: "/var/lib/cybergan"     # Persistent data directory
+  pid_file: "/var/run/cybergan.pid"
+  confidence_threshold: 0.7         # Min confidence to act autonomously
+  advisory_threshold: 0.4           # Min confidence to alert
+  max_actions_per_minute: 30        # Rate limit on defensive actions
+  cooldown_seconds: 10              # Min time between same action type
+
+# ─────────────────────────────────────────────
+# Perception — Monitoring Configuration
+# ─────────────────────────────────────────────
+perception:
+  log_monitor:
+    enabled: true
+    watch_files:
+      - "/var/log/syslog"
+      - "/var/log/auth.log"
+      - "/var/log/kern.log"
+    custom_logs: []                 # Add application log paths
+    poll_interval_ms: 500
+    max_lines_per_batch: 1000
+    brute_force_threshold: 5        # Failed logins before alert
+    brute_force_window_s: 300       # 5-minute window
+
+  network_monitor:
+    enabled: true
+    poll_interval_s: 5
+    connection_spike_threshold: 100  # New connections per interval
+    port_scan_threshold: 10          # Unique ports from single IP
+    port_scan_window_s: 60
+    track_outbound: true
+    suspicious_ports: [4444, 5555, 6666, 1337, 31337, 8888, 9999]
+    whitelisted_ips: []
+
+  file_monitor:
+    enabled: true
+    watch_paths:
+      - "/etc/"
+      - "/usr/bin/"
+      - "/usr/sbin/"
+      - "/var/www/"
+      - "/root/.ssh/"
+    exclude_patterns:
+      - "*.log"
+      - "*.tmp"
+      - "*.swp"
+    alert_on_new_executables: true
+    alert_on_suid_changes: true
+    alert_on_crontab_changes: true
+
+  process_monitor:
+    enabled: true
+    poll_interval_s: 10
+    cpu_threshold_percent: 90        # Per-process CPU alert
+    memory_threshold_mb: 2048        # Per-process memory alert
+    suspicious_process_names:
+      - "nc"
+      - "ncat"
+      - "netcat"
+      - "socat"
+      - "xmrig"
+      - "minerd"
+      - "cpuminer"
+      - "cryptonight"
+    detect_reverse_shells: true
+    detect_cryptominers: true
+
+  web_monitor:
+    enabled: true
+    mode: "log_parser"               # log_parser | middleware | proxy
+    access_log_path: "/var/log/nginx/access.log"
+    error_log_path: "/var/log/nginx/error.log"
+    poll_interval_ms: 500
+    rate_limit_requests_per_minute: 1000
+    rate_limit_per_ip: 100
+    block_suspicious_user_agents: true
+
+  system_metrics:
+    enabled: true
+    poll_interval_s: 15
+    cpu_alert_threshold: 95
+    memory_alert_threshold: 90
+    disk_alert_threshold: 90
+    network_spike_threshold_mbps: 500
+
+# ─────────────────────────────────────────────
+# Analysis — Threat Detection Configuration
+# ─────────────────────────────────────────────
+analysis:
+  anomaly_detector:
+    baseline_window_hours: 24        # Rolling baseline period
+    deviation_sigma: 3.0             # Standard deviations for anomaly
+    min_samples_for_baseline: 100
+    adaptive_learning_rate: 0.01
+
+  risk_scorer:
+    severity_weight: 0.4
+    confidence_weight: 0.3
+    impact_weight: 0.3
+    critical_threshold: 80           # Risk score 0-100
+    high_threshold: 60
+    medium_threshold: 40
+
+  threat_classifier:
+    mitre_mapping: true
+    kill_chain_tracking: true
+
+# ─────────────────────────────────────────────
+# Brain — RL Decision Engine
+# ─────────────────────────────────────────────
+brain:
+  model_path: "checkpoints/blue_production.pt"
+  fallback_to_heuristic: true        # Use rules if no RL model loaded
+  observation_window_s: 60           # Sliding window for state
+  action_selection: "stochastic"     # deterministic | stochastic
+  temperature: 0.5                   # Exploration temperature
+  device: "cpu"                      # cpu | cuda | auto
+
+# ─────────────────────────────────────────────
+# Actions — Defensive Response Configuration
+# ─────────────────────────────────────────────
+actions:
+  firewall:
+    backend: "iptables"              # iptables | nftables | ufw
+    chain: "CYBERGAN"                # Custom iptables chain name
+    auto_cleanup_hours: 24           # Auto-unblock after N hours
+    max_blocked_ips: 10000
+
+  ip_blocker:
+    enabled: true
+    auto_block_duration_s: 3600      # 1 hour default block
+    permanent_block_threshold: 5     # Blocks before permanent
+    whitelisted_ips:
+      - "127.0.0.1"
+      - "::1"
+    whitelisted_cidrs: []
+
+  waf:
+    enabled: true
+    sqli_protection: true
+    xss_protection: true
+    csrf_protection: true
+    rce_protection: true
+    lfi_protection: true
+    rfi_protection: true
+    xxe_protection: true
+    ssrf_protection: true
+    command_injection_protection: true
+    directory_traversal_protection: true
+
+  process_control:
+    enabled: true
+    auto_kill_cryptominers: true
+    auto_kill_reverse_shells: true
+    require_approval_for_kill: false  # In autonomous mode
+
+  service_control:
+    enabled: true
+    backend: "systemd"               # systemd | docker | both
+    auto_restart_on_crash: true
+    max_restarts_per_hour: 5
+
+  alerter:
+    channels:
+      - type: "webhook"
+        url: ""                      # Slack/Discord webhook URL
+        enabled: false
+      - type: "email"
+        smtp_host: ""
+        smtp_port: 587
+        from_addr: ""
+        to_addrs: []
+        enabled: false
+      - type: "console"
+        enabled: true
+    alert_cooldown_s: 60             # Min time between same alert type
+    batch_alerts: true
+    batch_window_s: 30
+
+  honeypot:
+    enabled: false
+    ports: [2222, 8080, 8443, 9090]  # Decoy service ports
+    log_interactions: true
+
+# ─────────────────────────────────────────────
+# Healing — Self-Healing & Continuous Learning
+# ─────────────────────────────────────────────
+healing:
+  online_learning:
+    enabled: true
+    learning_rate: 1.0e-4
+    update_interval_episodes: 10
+    min_experience_for_update: 50
+    reward_for_blocked_attack: 5.0
+    reward_for_missed_attack: -10.0
+    reward_for_false_positive: -3.0
+
+  arena_training:
+    enabled: true
+    background_epochs_per_hour: 10
+    sync_to_production_interval: 100  # Epochs between model sync
+
+  threat_intel:
+    enabled: true
+    feeds:
+      - name: "NVD"
+        url: "https://services.nvd.nist.gov/rest/json/cves/2.0"
+        poll_interval_hours: 6
+      - name: "CISA KEV"
+        url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+        poll_interval_hours: 12
+
+  checkpoint_manager:
+    max_checkpoints: 20
+    save_interval_epochs: 50
+    auto_rollback_on_regression: true
+    regression_threshold: 0.15       # Win rate drop to trigger rollback
+
+# ─────────────────────────────────────────────
+# Dashboard — Web UI
+# ─────────────────────────────────────────────
+dashboard:
+  enabled: true
+  host: "127.0.0.1"                  # Localhost only for security
+  port: 8443
+  auth_required: true
+  api_key: ""                        # Set this for production
+
+# ─────────────────────────────────────────────
+# Training — Arena Configuration (from prototype)
+# ─────────────────────────────────────────────
+training:
+  epochs: 200
+  steps_per_epoch: 64
+  episodes_per_epoch: 8
+  eval_episodes: 4
+  batch_size: 256
+  lr: 3.0e-4
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_epsilon: 0.2
+  entropy_coef: 0.01
+  value_coef: 0.5
+  max_grad_norm: 0.5
+  ppo_epochs: 4
+  device: "auto"
+
+league:
+  enabled: true
+  save_threshold: 0.6
+  pool_size: 10
+  initial_elo: 1000
+
+# ─────────────────────────────────────────────
+# Network Topology (Simulated for Arena)
+# ─────────────────────────────────────────────
+network:
+  nodes:
+    - id: gateway
+      type: router
+      services:
+        - name: ssh
+          port: 22
+          version: "OpenSSH 8.2"
+        - name: http
+          port: 80
+          version: "nginx 1.18"
+      vulnerabilities:
+        - cve: "CVE-2024-6387"
+          service: ssh
+          severity: 8.1
+          description: "regreSSHion - Race condition in OpenSSH"
+
+    - id: webserver
+      type: server
+      services:
+        - name: http
+          port: 80
+          version: "Apache 2.4.49"
+        - name: https
+          port: 443
+          version: "Apache 2.4.49"
+      vulnerabilities:
+        - cve: "CVE-2021-41773"
+          service: http
+          severity: 7.5
+          description: "Path traversal in Apache 2.4.49"
+        - cve: "CVE-2021-42013"
+          service: http
+          severity: 9.8
+          description: "RCE via path traversal in Apache 2.4.49"
+
+    - id: database
+      type: server
+      services:
+        - name: mysql
+          port: 3306
+          version: "MySQL 5.7.34"
+      vulnerabilities:
+        - cve: "CVE-2023-22078"
+          service: mysql
+          severity: 6.5
+          description: "MySQL privilege escalation"
+
+    - id: fileserver
+      type: server
+      services:
+        - name: smb
+          port: 445
+          version: "Samba 4.13"
+      vulnerabilities:
+        - cve: "CVE-2021-44142"
+          service: smb
+          severity: 8.8
+          description: "Samba heap overflow RCE"
+
+    - id: workstation
+      type: endpoint
+      services:
+        - name: rdp
+          port: 3389
+          version: "xrdp 0.9.17"
+      vulnerabilities:
+        - cve: "CVE-2022-23613"
+          service: rdp
+          severity: 7.8
+          description: "xrdp buffer overflow"
+
+    - id: admin_panel
+      type: server
+      services:
+        - name: https
+          port: 443
+          version: "Node.js 16.13"
+      vulnerabilities:
+        - cve: "CVE-2023-32002"
+          service: https
+          severity: 9.1
+          description: "Node.js policy bypass via Module._load"
+
+  connections:
+    - from: gateway
+      to: webserver
+      firewall: [80, 443]
+    - from: gateway
+      to: workstation
+      firewall: [3389]
+    - from: webserver
+      to: database
+      firewall: [3306]
+    - from: webserver
+      to: fileserver
+      firewall: [445]
+    - from: workstation
+      to: fileserver
+      firewall: [445]
+    - from: workstation
+      to: database
+      firewall: [3306]
+    - from: admin_panel
+      to: database
+      firewall: [3306]
+    - from: admin_panel
+      to: gateway
+      firewall: [22]

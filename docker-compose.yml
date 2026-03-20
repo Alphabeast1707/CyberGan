@@ -1,0 +1,157 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  CyberGAN — docker-compose.yml                                  ║
+# ║  Full production stack: agent + WAF-protected demo app          ║
+# ║  Usage: docker compose up -d                                    ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+version: "3.9"
+
+# ── Named volumes for persistence ──────────────────────────────────
+volumes:
+  cybergan_data:     # Agent state, IP blocklist, event history
+  cybergan_models:   # Trained RL model checkpoints
+  cybergan_logs:     # Structured JSON logs
+
+# ── Shared network ─────────────────────────────────────────────────
+networks:
+  cybergan_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+services:
+
+  # ╔═════════════════════════════════════════════════╗
+  # ║  CORE: CyberGAN Security Agent + Dashboard     ║
+  # ╚═════════════════════════════════════════════════╝
+  cybergan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: cybergan-agent
+    image: cybergan:latest
+
+    # Security capabilities — minimum required for real firewall ops
+    cap_add:
+      - NET_ADMIN      # iptables, ip rule, ip route
+      - NET_RAW        # raw socket access for packet inspection
+      - SYS_PTRACE     # process inspection (cryptominer detection)
+    security_opt:
+      - no-new-privileges:true
+
+    # Real system access — these make monitoring REAL
+    volumes:
+      # Persistence
+      - cybergan_data:/var/lib/cybergan
+      - cybergan_models:/opt/cybergan/checkpoints
+      - cybergan_logs:/var/log/cybergan
+
+      # Read-only system logs for real monitoring
+      - /var/log:/host/var/log:ro
+      - /proc:/host/proc:ro
+
+      # Config overrides (mount your custom config here)
+      - ./config/default.yaml:/opt/cybergan/config/default.yaml:ro
+
+    environment:
+      - CYBERGAN_MODE=${CYBERGAN_MODE:-hybrid}
+      - CYBERGAN_LOG_LEVEL=${CYBERGAN_LOG_LEVEL:-INFO}
+      # Alert integrations (set in .env file)
+      - SLACK_WEBHOOK=${SLACK_WEBHOOK:-}
+      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK:-}
+      - PAGERDUTY_KEY=${PAGERDUTY_KEY:-}
+
+    ports:
+      - "${DASHBOARD_PORT:-8443}:8443"   # Dashboard (bind to localhost in prod)
+
+    networks:
+      cybergan_net:
+        ipv4_address: 172.20.0.2
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8443/api/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+    command: ["run", "--mode", "${CYBERGAN_MODE:-hybrid}", "--dashboard"]
+
+  # ╔═════════════════════════════════════════════════╗
+  # ║  WAF: Demo protected web application           ║
+  # ║  Replace with YOUR app — just add the WAF      ║
+  # ║  middleware to your FastAPI/Starlette app      ║
+  # ╚═════════════════════════════════════════════════╝
+  demo-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: cybergan-waf-demo
+    image: cybergan:latest
+
+    environment:
+      - CYBERGAN_DASHBOARD_WS=ws://cybergan:8443/ws
+
+    ports:
+      - "8000:8000"    # Protected app
+
+    networks:
+      cybergan_net:
+        ipv4_address: 172.20.0.3
+
+    depends_on:
+      cybergan:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    command: ["python", "demo_app.py"]
+    entrypoint: []    # Override ENTRYPOINT for the demo app
+
+  # ╔═════════════════════════════════════════════════╗
+  # ║  TRAINER: One-off training job                 ║
+  # ║  Run with: docker compose run --rm trainer     ║
+  # ╚═════════════════════════════════════════════════╝
+  trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: cybergan-trainer
+    image: cybergan:latest
+
+    volumes:
+      - cybergan_models:/opt/cybergan/checkpoints
+      - cybergan_logs:/var/log/cybergan
+
+    networks:
+      - cybergan_net
+
+    profiles:
+      - training    # Only starts with: docker compose --profile training up
+
+    command: ["train", "--epochs", "300"]
