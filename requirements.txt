@@ -1,0 +1,36 @@
+# CyberGAN — Production AI Security Agent
+# Core ML
+torch>=2.0.0
+numpy>=1.24.0
+
+# RL Environment
+gymnasium>=0.29.0
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+websockets>=12.0
+
+# Configuration
+pyyaml>=6.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# CLI
+rich>=13.7.0
+click>=8.1.0
+
+# Monitoring
+watchdog>=3.0.0        # File system monitoring
+psutil>=5.9.0          # System metrics & process monitoring
+aiohttp>=3.9.0         # Async HTTP for threat intel feeds
+
+# Security
+cryptography>=41.0.0   # SSL/TLS management
+
+# Logging
+structlog>=23.2.0      # Structured logging
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
