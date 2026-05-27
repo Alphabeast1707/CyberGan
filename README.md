@@ -14,12 +14,6 @@
 
 *Live SOC Dashboard — real-time threat feed, MITRE ATT&CK kill chain, RL policy decisions*
 
-<br/>
-
-![CyberGAN Live Agent](dashboard.png)
-
-*Live agent output — 412 threats detected, 141 IPs blocked, Brain: Heuristic → RL Policy after training*
-
 </div>
 
 ---
