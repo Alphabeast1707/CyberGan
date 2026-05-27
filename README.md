@@ -43,63 +43,63 @@ CyberGAN is a **production-grade AI security agent** that monitors your server i
 
 ## ✨ Features
 
-- **🧠 Trained RL Brain** — PPO Blue Agent, ELO 1372 vs Red ELO 628, 279W/21L in 300 epochs
-- **🔥 WAF Middleware** — Drop-in ASGI middleware for FastAPI/Starlette. 62 patterns, **100% block rate** against real attack payloads
-- **👁️ 6 Real-time Monitors** — Log stream, network, file system, process, web, system metrics
-- **🛡️ 60+ Attack Vectors** — SQLi, XSS, CSRF, RCE, LFI, SSRF, SSTI, DDoS, cryptojacking, reverse shells, ransomware, and more
-- **🖥️ Live SOC Dashboard** — WebSocket-powered dashboard with kill chain, threat feed, ELO graph, system health
-- **🐳 Docker Ready** — One-command deploy to any Linux server
-- **🍎 macOS Native** — Uses `log stream`, `pf` firewall, graceful fallback for non-root
-- **⚔️ Self-Healing Arena** — Continuously retrains against new attack patterns
-- **📣 Alerting** — Slack, Discord, PagerDuty webhooks
+- **Trained RL Brain** — PPO Blue Agent, ELO 1372 vs Red ELO 628, 279W/21L in 300 epochs
+- **WAF Middleware** — Drop-in ASGI middleware for FastAPI/Starlette. 62 patterns, **100% block rate** against real attack payloads
+- **6 Real-time Monitors** — Log stream, network, file system, process, web, system metrics
+- **60+ Attack Vectors** — SQLi, XSS, CSRF, RCE, LFI, SSRF, SSTI, DDoS, cryptojacking, reverse shells, ransomware, and more
+- **Live SOC Dashboard** — WebSocket-powered dashboard with kill chain, threat feed, ELO graph, system health
+- **Docker Ready** — One-command deploy to any Linux server
+- **macOS Native** — Uses `log stream`, `pf` firewall, graceful fallback for non-root
+- **Self-Healing Arena** — Continuously retrains against new attack patterns
+- **Alerting** — Slack, Discord, PagerDuty webhooks
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         CyberGAN System                              │
-│                                                                      │
+┌─────────────────────────────────────────────────────────────────────┐
+│                         CyberGAN System                             │
+│                                                                     │
 │  ┌─────────────────────────────── PERCEPTION ───────────────────┐   │
-│  │  log_monitor  network_monitor  file_monitor  process_monitor  │   │
-│  │  web_monitor              system_metrics                      │   │
-│  └───────────────────────────────┬───────────────────────────────┘   │
-│                                  │ real events                        │
+│  │  log_monitor  network_monitor  file_monitor  process_monitor │   │
+│  │  web_monitor              system_metrics                     │   │
+│  └───────────────────────────────┬──────────────────────────────┘   │
+│                                  │ real events                      │
 │  ┌──────────────── ANALYSIS ─────▼──────────────────────────────┐   │
-│  │  feature_extractor → risk_scorer → threat_classifier          │   │
-│  │  attack_signatures (62 patterns)   anomaly_detector           │   │
-│  └──────────────────────────────┬────────────────────────────────┘   │
-│                                  │ observation vector                  │
+│  │  feature_extractor → risk_scorer → threat_classifier         │   │
+│  │  attack_signatures (62 patterns)   anomaly_detector          │   │
+│  └──────────────────────────────┬───────────────────────────────┘   │
+│                                 │ observation vector                │
 │  ┌──────────────── BRAIN ────────▼──────────────────────────────┐   │
 │  │  PPO Blue Policy (ELO 1372)  ←→  Heuristic fallback          │   │
-│  │  arena_obs_dim=74  prod_obs_dim=65  (auto-bridged)            │   │
-│  └──────────────────────────────┬────────────────────────────────┘   │
-│                                  │ defense action                      │
+│  │  arena_obs_dim=74  prod_obs_dim=65  (auto-bridged)           │   │
+│  └──────────────────────────────┬───────────────────────────────┘   │
+│                                 │ defense action                    │
 │  ┌──────────────── ACTIONS ──────▼──────────────────────────────┐   │
-│  │  firewall (iptables/pf)  ip_blocker  process_control          │   │
-│  │  waf  alerter  honeypot  service_control  patcher             │   │
-│  └──────────────────────────────┬────────────────────────────────┘   │
-│                                  │                                     │
+│  │  firewall (iptables/pf)  ip_blocker  process_control         │   │
+│  │  waf  alerter  honeypot  service_control  patcher            │   │
+│  └──────────────────────────────┬───────────────────────────────┘   │
+│                                 │                                   │
 │  ┌──────────────── DASHBOARD ────▼──────────────────────────────┐   │
 │  │  FastAPI + WebSocket  →  Real-time SOC  :8443                │   │
 │  └──────────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────┘
 
-┌─────────────────────── ARENA TRAINING ──────────────────────────────┐
-│  Red Agent (PPO)  ⚔️  co-evolve  ⚔️  Blue Agent (PPO)               │
-│  300 epochs · 0.5s/epoch · Blue 279W/21L · ELO gap: 744 points      │
-└──────────────────────────────────────────────────────────────────────┘
+┌─────────────────────── ARENA TRAINING ─────────────────────────────┐
+│  Red Agent (PPO)  *  co-evolve  *  Blue Agent (PPO)                │
+│  300 epochs · 0.5s/epoch · Blue 279W/21L · ELO gap: 744 points     │
+└────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────── WAF MIDDLEWARE ──────────────────────────────┐
-│  HTTP Request → CyberGANMiddleware → Pattern Match (62 rules)        │
-│     → BLOCK (403) or PASS → Dashboard broadcast → Slack/Discord      │
-└──────────────────────────────────────────────────────────────────────┘
+│  HTTP Request → CyberGANMiddleware → Pattern Match (62 rules)       │
+│     → BLOCK (403) or PASS → Dashboard broadcast → Slack/Discord     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -153,14 +153,14 @@ Expected output:
 ```
 Total attacks:  47
 Blocked by WAF: 47  (100%)
-  SQLi   7/7  🛑   XSS    7/7  🛑   LFI    7/7  🛑
-  RCE    8/8  🛑   SSRF   7/7  🛑   SSTI   4/4  🛑
-  Recon  7/7  🛑
+  SQLi   7/7     XSS    7/7     LFI    7/7  
+  RCE    8/8     SSRF   7/7     SSTI   4/4  
+  Recon  7/7  
 ```
 
 ---
 
-## 🔥 WAF Middleware
+## WAF Middleware
 
 Add production-grade WAF protection to **any FastAPI or Starlette app** in 3 lines:
 
@@ -206,7 +206,7 @@ app.add_middleware(
 
 ---
 
-## 🧠 RL Training — How It Works
+## RL Training — How It Works
 
 CyberGAN uses **Proximal Policy Optimization (PPO)** in an adversarial co-evolution loop:
 
@@ -243,7 +243,7 @@ CyberGAN uses **Proximal Policy Optimization (PPO)** in an adversarial co-evolut
 
 ---
 
-## 🖥️ Dashboard
+## Dashboard
 
 Live SOC dashboard at **http://localhost:8443**
 
@@ -259,7 +259,7 @@ Live SOC dashboard at **http://localhost:8443**
 
 ---
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 ### Option A — Docker Compose (recommended)
 
@@ -410,7 +410,7 @@ CyberGan/
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 All settings live in `config/default.yaml`:
 
@@ -510,7 +510,7 @@ Standalone trainer (recommended):
 
 ---
 
-## 📊 Benchmarks
+## Benchmarks
 
 | Metric | Value |
 |---|---|
@@ -526,7 +526,7 @@ Standalone trainer (recommended):
 
 ---
 
-## 🔒 Security Notes
+## Security Notes
 
 - **macOS**: The agent runs without root in advisory mode. For firewall blocking, `sudo` is required. Without it, threats are tracked in memory and alerts are still sent.
 - **Linux**: Grant `CAP_NET_ADMIN` + `CAP_NET_RAW` (handled automatically by Docker).
@@ -535,7 +535,7 @@ Standalone trainer (recommended):
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
